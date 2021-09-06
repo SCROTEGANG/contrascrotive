@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY ./ ./
 
-RUN go build . -o contrascrotive
+RUN go build -o contrascrotive .
 
 FROM gcr.io/distroless/base:nonroot
 COPY --from=builder /contrascrotive/contrascrotive /contrascrotive
