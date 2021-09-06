@@ -51,6 +51,13 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	user, err := s.Discord.User(ctx, tok.AccessToken)
+	if err != nil {
+		s.Logger.Error("error getting user", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	guilds, err := s.Discord.UserGuilds(ctx, tok.AccessToken)
 	if err != nil {
 		s.Logger.Error("error getting user guilds", zap.Error(err))
@@ -71,6 +78,12 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	t := jwt.New()
+	if err := t.Set("user_id", user.ID); err != nil {
+		s.Logger.Error("unable to set private claim", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	payload, err := jwt.Sign(t, jwa.HS256, s.Key)
 	if err != nil {
 		s.Logger.Error("unable to sign token", zap.Error(err))
