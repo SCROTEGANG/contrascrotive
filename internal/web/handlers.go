@@ -78,7 +78,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	t := jwt.New()
-	if err := t.Set("user_id", user.ID); err != nil {
+	if err := t.Set("uid", user.ID); err != nil {
 		s.Logger.Error("unable to set private claim", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
