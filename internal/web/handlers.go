@@ -113,6 +113,10 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	http.SetCookie(w, cook)
 
 	if redir != "" {
+		if !strings.HasPrefix(redir, "https://") {
+			redir = "https://" + redir
+		}
+
 		http.Redirect(w, r, redir, http.StatusSeeOther)
 	}
 }
