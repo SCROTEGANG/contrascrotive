@@ -116,5 +116,8 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 		}
 
 		http.Redirect(w, r, redir, http.StatusSeeOther)
+		return
 	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
