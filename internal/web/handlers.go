@@ -37,7 +37,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	redir, ok := s.State[state]
+	_, ok := s.State[state]
 	if !ok {
 		s.Logger.Debug("state not in cache", zap.String("got", state))
 		writeError(w, http.StatusBadRequest)
