@@ -33,35 +33,35 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	state := r.FormValue("state")
 	if state == "" {
 		s.Logger.Debug("blank state returned")
-		writeError(w, http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	_, ok := s.State[state]
+	redir, ok := s.State[state]
 	if !ok {
 		s.Logger.Debug("state not in cache", zap.String("got", state))
-		writeError(w, http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	tok, err := s.Discord.Exchange(ctx, r.FormValue("code"))
 	if err != nil {
 		s.Logger.Error("error exchanging code", zap.Error(err))
-		writeError(w, http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	user, err := s.Discord.User(ctx, tok.AccessToken)
 	if err != nil {
 		s.Logger.Error("error getting user", zap.Error(err))
-		writeError(w, http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	guilds, err := s.Discord.UserGuilds(ctx, tok.AccessToken)
 	if err != nil {
 		s.Logger.Error("error getting user guilds", zap.Error(err))
-		writeError(w, http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -73,7 +73,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	if !inGuild {
-		writeError(w, http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	payload, err := jwt.Sign(t, jwa.HS256, s.Key)
 	if err != nil {
 		s.Logger.Error("unable to sign token", zap.Error(err))
-		writeError(w, http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -93,12 +93,12 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	expire := time.Now().Add(expireDur)
 
 	cook := &http.Cookie{
-		Name:    cookieJWT,
-		Value:   string(payload),
-		Domain:  s.Domain,
-		Path:    "/",
-		Expires: expire,
-		// SameSite: http.SameSiteStrictMode,
+		Name:     cookieJWT,
+		Value:    string(payload),
+		Domain:   s.Domain,
+		Path:     "/",
+		Expires:  expire,
+		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}
 
@@ -109,16 +109,6 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	http.SetCookie(w, cook)
-
-	// if redir != "" {
-	// 	if !strings.HasPrefix(redir, "https://") {
-	// 		redir = "https://" + redir
-	// 	}
-
-	// 	http.Redirect(w, r, redir, http.StatusSeeOther)
-	// 	return
-	// }
-
-	// http.Redirect(w, r, "/", http.StatusSeeOther)
-	w.Write([]byte(`you have been authenticated!!!!!!!!!!!!!!!!!`))
+	w.Header().Set("Location", redir)
+	w.WriteHeader(http.StatusOK)
 }
