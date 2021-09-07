@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -31,40 +30,38 @@ func (s *Server) handleAuthDiscord(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	fmt.Println("HELP")
-
 	state := r.FormValue("state")
 	if state == "" {
 		s.Logger.Debug("blank state returned")
-		w.WriteHeader(http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest)
 		return
 	}
 
 	redir, ok := s.State[state]
 	if !ok {
 		s.Logger.Debug("state not in cache", zap.String("got", state))
-		w.WriteHeader(http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest)
 		return
 	}
 
 	tok, err := s.Discord.Exchange(ctx, r.FormValue("code"))
 	if err != nil {
 		s.Logger.Error("error exchanging code", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
 	user, err := s.Discord.User(ctx, tok.AccessToken)
 	if err != nil {
 		s.Logger.Error("error getting user", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
 	guilds, err := s.Discord.UserGuilds(ctx, tok.AccessToken)
 	if err != nil {
 		s.Logger.Error("error getting user guilds", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
@@ -76,7 +73,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	}
 
 	if !inGuild {
-		w.WriteHeader(http.StatusForbidden)
+		writeError(w, http.StatusForbidden)
 		return
 	}
 
@@ -88,7 +85,7 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	payload, err := jwt.Sign(t, jwa.HS256, s.Key)
 	if err != nil {
 		s.Logger.Error("unable to sign token", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError)
 		return
 	}
 
