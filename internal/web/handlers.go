@@ -93,12 +93,12 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 	expire := time.Now().Add(expireDur)
 
 	cook := &http.Cookie{
-		Name:     cookieJWT,
-		Value:    string(payload),
-		Domain:   s.Domain,
-		Path:     "/",
-		Expires:  expire,
-		SameSite: http.SameSiteStrictMode,
+		Name:    cookieJWT,
+		Value:   string(payload),
+		Domain:  s.Domain,
+		Path:    "/",
+		Expires: expire,
+		// SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 	}
 
