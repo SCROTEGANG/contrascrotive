@@ -21,6 +21,10 @@ func (s *Server) handleAuthDiscord(w http.ResponseWriter, r *http.Request) {
 	redir := q.Get("redirect")
 	state := uuid.Must(uuid.NewV4()).String()
 
+	if !strings.HasPrefix(redir, "https://") {
+		redir = "https://" + redir
+	}
+
 	s.State[state] = redir
 
 	url := s.Discord.AuthCodeURL(state, oauth2.AccessTypeOffline)
@@ -110,5 +114,5 @@ func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Reques
 
 	http.SetCookie(w, cook)
 	w.Header().Set("Location", redir)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusSeeOther)
 }
