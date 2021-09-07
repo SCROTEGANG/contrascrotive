@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -29,6 +30,8 @@ func (s *Server) handleAuthDiscord(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleAuthDiscordCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	fmt.Println("HELP")
 
 	state := r.FormValue("state")
 	if state == "" {
